@@ -1,26 +1,91 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@font-face {
+  font-family: 'MortendBold';
+  src: url('/MortendBold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Akkurat Mono", monospace;
+  background-color: white;
+  color: #0f0f0f;
+}
+
+.nav {
+  position: relative;
+  z-index: 100;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav a {
+  text-decoration: none;
+  color: #0f0f0f;
+  font-family: "MortendBold", "Akkurat Mono", sans-serif;
+  font-size: 24px;
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+}
+
+.image-name {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  font-family: "MortendBold", "Akkurat Mono", sans-serif;
+  font-size: 3em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #0f0f0f;
+  pointer-events: none;
+  opacity: 0.9;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  white-space: nowrap;
+  width: max-content;
+}
+
+#canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  touch-action: none; /* Désactiver le scroll natif sur mobile */
+}
+
+/* Optimisations mobiles */
+@media (max-width: 768px) {
+  .image-name {
+    font-size: 2em;
+    max-width: 90vw;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  
+  .nav {
+    padding: 15px;
+  }
+  
+  .nav a {
+    font-size: 18px;
+  }
+  
+  .logo {
+    width: 80px;
+  }
 }

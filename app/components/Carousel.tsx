@@ -9,6 +9,26 @@ interface CarouselProps {
   imagesCount?: number;
 }
 
+// Interface pour les données utilisateur des slides
+interface SlideUserData {
+  originalVertices: number[];
+  index: number;
+  targetPos: number;
+  currentPos: number;
+}
+
+// Type pour les slides avec userData typé
+type SlideWithUserData = THREE.Mesh & {
+  userData: SlideUserData;
+}
+
+// Extension de Window pour les propriétés personnalisées
+declare global {
+  interface Window {
+    scrollTimeout?: NodeJS.Timeout;
+  }
+}
+
 export default function Carousel({ 
   imageNames = ["TRIPACK TEES BLACK", "WALONE HOODIE", "WALONE TEE", "WALONE HOODIE", "TRIPACK TEES WHITE"],
   slideCount = 10,
@@ -82,7 +102,7 @@ export default function Carousel({
     const slideUnit = isMobile ? slideHeight + gap : slideWidth + gap;
     const totalSize = slideCount * slideUnit;
 
-    const slides: THREE.Mesh[] = [];
+    const slides: SlideWithUserData[] = [];
     let currentPosition = 0;
     let targetPosition = 0;
     let isScrolling = false;
@@ -96,10 +116,10 @@ export default function Carousel({
     let currentDistortionFactor = 0;
     let targetDistortionFactor = 0;
     let peakVelocity = 0;
-    let velocityHistory = [0, 0, 0, 0, 0];
+    const velocityHistory = [0, 0, 0, 0, 0];
 
     let currentCenterImageIndex = 0;
-    let snapStrength = 0.05;
+    const snapStrength = 0.05;
 
     const correctImageColor = (texture: THREE.Texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -115,7 +135,7 @@ export default function Carousel({
         side: THREE.DoubleSide,
       });
 
-      const mesh = new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(geometry, material) as unknown as SlideWithUserData;
       
       // Position selon le device
       if (isMobile) {
@@ -126,7 +146,7 @@ export default function Carousel({
         mesh.position.y = 0;
       }
       
-      (mesh as any).userData = {
+      mesh.userData = {
         originalVertices: [...geometry.attributes.position.array],
         index,
         targetPos: isMobile ? mesh.position.y : mesh.position.x,
@@ -182,7 +202,7 @@ export default function Carousel({
     };
 
     const updateCenterImageName = () => {
-      let closestSlide = null;
+      let closestSlide: SlideWithUserData | null = null;
       let minDistance = Infinity;
 
       slides.forEach((slide) => {
@@ -194,7 +214,7 @@ export default function Carousel({
       });
 
       if (closestSlide) {
-        const imageIndex = (closestSlide as any).userData.index % imagesCount;
+        const imageIndex = (closestSlide as SlideWithUserData).userData.index % imagesCount;
         if (currentCenterImageIndex !== imageIndex) {
           currentCenterImageIndex = imageIndex;
           imageNameElement.textContent = imageNames[imageIndex];
@@ -214,22 +234,22 @@ export default function Carousel({
     slides.forEach((slide) => {
       if (isMobile) {
         slide.position.y += totalSize / 2;
-        (slide as any).userData.targetPos = slide.position.y;
-        (slide as any).userData.currentPos = slide.position.y;
+        slide.userData.targetPos = slide.position.y;
+        slide.userData.currentPos = slide.position.y;
       } else {
         slide.position.x -= totalSize / 2;
-        (slide as any).userData.targetPos = slide.position.x;
-        (slide as any).userData.currentPos = slide.position.x;
+        slide.userData.targetPos = slide.position.x;
+        slide.userData.currentPos = slide.position.x;
       }
     });
 
-    const updateCurve = (mesh: THREE.Mesh, worldPosition: number, distortionFactor: number) => {
+    const updateCurve = (mesh: SlideWithUserData, worldPosition: number, distortionFactor: number) => {
       const distortionCenter = new THREE.Vector2(0, 0);
       const distortionRadius = 2.0;
       const maxCurvature = settings.maxDistortion * distortionFactor;
 
       const positionAttribute = mesh.geometry.attributes.position;
-      const originalVertices = (mesh as any).userData.originalVertices;
+      const originalVertices = mesh.userData.originalVertices;
 
       for (let i = 0; i < positionAttribute.count; i++) {
         const x = originalVertices[i * 3];
@@ -292,8 +312,8 @@ export default function Carousel({
       autoScrollSpeed =
         Math.min(Math.abs(e.deltaY) * 0.0005, 0.05) * Math.sign(e.deltaY);
 
-      clearTimeout((window as any).scrollTimeout);
-      (window as any).scrollTimeout = setTimeout(() => {
+      clearTimeout(window.scrollTimeout);
+      window.scrollTimeout = setTimeout(() => {
         isScrolling = false;
       }, 150);
     };
@@ -446,22 +466,22 @@ export default function Carousel({
         }
 
         const isWrapping =
-          Math.abs(basePos - (slide as any).userData.targetPos) > slideUnit * 2;
+          Math.abs(basePos - slide.userData.targetPos) > slideUnit * 2;
         if (isWrapping) {
-          (slide as any).userData.currentPos = basePos;
+          slide.userData.currentPos = basePos;
         }
 
-        (slide as any).userData.targetPos = basePos;
-        (slide as any).userData.currentPos +=
-          ((slide as any).userData.targetPos - (slide as any).userData.currentPos) * settings.slideLerp;
+        slide.userData.targetPos = basePos;
+        slide.userData.currentPos +=
+          (slide.userData.targetPos - slide.userData.currentPos) * settings.slideLerp;
 
         const wrapThreshold = totalSize / 2 + slideUnit;
-        if (Math.abs((slide as any).userData.currentPos) < wrapThreshold * 1.5) {
+        if (Math.abs(slide.userData.currentPos) < wrapThreshold * 1.5) {
           if (isMobile) {
-            slide.position.y = (slide as any).userData.currentPos;
+            slide.position.y = slide.userData.currentPos;
             updateCurve(slide, slide.position.y, currentDistortionFactor);
           } else {
-            slide.position.x = (slide as any).userData.currentPos;
+            slide.position.x = slide.userData.currentPos;
             updateCurve(slide, slide.position.x, currentDistortionFactor);
           }
         }
